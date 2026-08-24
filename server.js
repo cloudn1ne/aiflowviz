@@ -16,15 +16,20 @@
  *   PORT               — this dashboard's port (default 5173)
  */
 import express from 'express';
+import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load .env from this folder (Node 20.6+ native; no dependency needed).
-// Real env vars always win over values read from .env.
-process.loadEnvFile(path.join(__dirname, '.env'));
+// Load .env from this folder if it exists (Node 20.6+ native; no dependency
+// needed). Real env vars always win over values read from .env. In a Docker
+// image .env is absent (kept out by .dockerignore), so tolerate its absence.
+const envPath = path.join(__dirname, '.env');
+if (process.loadEnvFile && fs.existsSync(envPath)) {
+  process.loadEnvFile(envPath);
+}
 
 const LITELLM_BASE = (process.env.LITELLM_BASE || 'http://localhost:4000').replace(/\/$/, '');
 const LITELLM_MASTER_KEY = process.env.LITELLM_MASTER_KEY || '';
@@ -95,7 +100,6 @@ const fmt = (n) => new Intl.NumberFormat('en-US').format(n);
 
 const app = express();
 // Serve index.html with the dashboard title injected from .env
-const fs = await import('node:fs');
 const indexHtml = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 // Serve the logo file at /<filename> (it lives in this folder, so
 // express.static already exposes it) and point the <img> at that route.
