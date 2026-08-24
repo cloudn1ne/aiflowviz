@@ -1,0 +1,139 @@
+:root {
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --panel2: #334155;
+  --text: #e2e8f0;
+  --accent: #38bdf8;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.topbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+  padding: 16px 24px;
+  background: linear-gradient(90deg, #0b1220, var(--bg));
+  border-bottom: 1px solid var(--panel2);
+}
+.topbar h1 { margin: 0; font-size: 20px; font-weight: 600; }
+
+/* Optional logo (top-left, next to the title) */
+.topbar .logo {
+  height: 32px;
+  margin-right: 10px;
+  vertical-align: middle;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.controls {
+  margin-left: auto;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+}
+.controls label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #94a3b8; }
+select {
+  background: var(--panel2); color: var(--text);
+  border: 1px solid #475569; border-radius: 6px;
+  padding: 6px 10px; font-size: 13px;
+}
+button {
+  background: var(--accent); color: #0b1220; border: none;
+  border-radius: 6px; padding: 8px 14px; font-weight: 600; cursor: pointer;
+}
+
+/* Records info pinned to the top-right corner of the chart-wrap */
+.records-info {
+  position: absolute;
+  top: 8px;
+  right: 16px;
+  font-size: 12px; color: #cbd5e1;
+  text-align: right;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.slider-wrap { gap: 8px; }
+input[type=range] { width: 160px; accent-color: var(--accent); }
+.chart-wrap {
+  /* Centered panel filling the browser width; the chart container (#chart)
+     is resized by the zoom slider so the whole chart grows/shrinks, and
+     #chart stays centered within this panel. position:relative anchors the
+     records-info and zoom-bar overlays to this panel. Top padding clears the
+     overlays so the in-flow chart starts below them. */
+  position: relative;
+  /* top padding keeps the chart clear of the absolutely-positioned zoom-bar */
+  padding: 48px 24px 24px;
+  margin: 20px 24px 0;
+  background: var(--panel); border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+}
+
+/* Zoom slider pinned to the top-left of the chart-wrap, aligned with the
+   records-info overlay at the top-right. */
+.zoom-bar {
+  position: absolute;
+  top: 8px;
+  left: 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: #94a3b8;
+}
+
+.zoom-bar input[type=range] {
+  flex: 0 0 200px;
+  accent-color: var(--accent); cursor: pointer;
+}
+.zoom-bar #zoomValue {
+  font-variant-numeric: tabular-nums; color: var(--text);
+}
+
+/* Smooth zoom: the chart container is resized by JS, and #chart is centered
+   with margin:0 auto. The SVG viewBox rescales content proportionally. */
+#chart {
+  position: relative; /* anchor the loading overlay */
+  margin: 0 auto;
+  transition: width .15s ease, height .15s ease;
+}
+
+/* Loading overlay over the chart */
+.loading-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(15, 23, 42, .55);
+  border-radius: 8px;
+}
+.loading-spinner {
+  width: 34px; height: 34px;
+  border: 3px solid rgba(255,255,255,.25);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+.loading-text {
+  font-size: 13px; color: #e2e8f0;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Download button below the chart */
+.download-bar {
+  display: flex; justify-content: center;
+  margin-top: 16px;
+}
+.download-bar button {
+  background: var(--accent); color: #0b1220;
+  border: none; border-radius: 6px;
+  padding: 8px 18px; font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.download-bar button:hover { filter: brightness(1.1); }
+.warnings { max-width: 1200px; margin: 12px auto 0; padding: 0 24px; }
+.warning { background: #7c2d12; color: #ffedd5; padding: 8px 12px; border-radius: 6px; margin: 4px 0; font-size: 13px; }

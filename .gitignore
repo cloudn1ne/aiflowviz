@@ -1,0 +1,10 @@
+# local config — never commit secrets
+.env
+
+node_modules/
+
+# runtime log
+dashboard.log
+
+# local asset — logo stays out of git
+logo.png
