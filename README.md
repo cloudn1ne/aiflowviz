@@ -54,20 +54,74 @@ when pagination stopped early or no records exist back to the slider's start.
 
 ---
 
-## 2. Top-of-panel controls
+## 2. Loading progress bar (orange, top row)
 
-Both the **zoom slider** (top-left) and the **time range** (top-right) are
-pinned to the top edge of the chart panel, vertically aligned, so they sit in a
-single row above the chart:
+While data is loading, an **orange progress bar** appears in the top row of the
+panel — between the zoom slider (top-left) and the records-info (top-right) —
+filled in real time as the server paginates:
+
+- The server streams the response as **newline-delimited JSON** (NDJSON):
+  one `{"progress":{"page":1,"total":N}}` line per fetched page, then a final
+  `{"data":{...}}` line with the aggregated result.
+- The browser reads the stream incrementally (`getReader` + `TextDecoder`),
+  updates the bar via `setLoadProgress(page, total)`, and hides it once the
+  data line arrives.
+- `.load-progress` → absolute, `top: 8px`, centered (`left: 50%`), slim 8px
+  rounded track — styled like the zoom slider.
+- `.load-progress-fill` → orange (`#f97316`), `width` 0→100% with a smooth
+  transition.
+
+---
+
+## 3. Top-of-panel controls & layout
+
+The **zoom slider** (top-left) and **time range** (top-right) are pinned to the
+top edge of the chart panel, vertically aligned, so they sit in a single row:
 
 - `.zoom-bar` → absolute, `top: 8px; left: 16px`
 - `.records-info` → absolute, `top: 8px; right: 16px`
 
-The panel's top padding clears the in-flow chart so it never overlaps them.
+### Chart fits the viewport vertically
+
+On page load and window resize the zoom factor is recalculated so the whole
+chart is visible in the vertical dimension:
+
+- `ensureBaseSize()` captures the chart's **natural (100%)** base size once,
+  from the unzoomed SVG, so zoom percentages stay stable.
+- `fitChartVertically()` measures the vertical space below the chart's content
+  top down to the bottom of the window (reserving the download bar), derives
+  the zoom factor, applies it, and syncs the slider/label.
+
+### Chart margin
+
+The chart container uses `margin: -40px auto` (instead of `0 auto`). The
+negative top margin pulls the chart up into the panel's top padding, which
+removes the vertical scrollbar and tightens the layout.
 
 ---
 
-## 3. Auth
+## 4. Settings are remembered (localStorage)
+
+The dashboard persists its controls in the browser's `localStorage` under the
+key `sankeyDashboard.settings`:
+
+| Setting | Control | Stored field |
+|---|---|---|
+| Timeframe | `#range` select | `range` |
+| Edge weight | `#weight` select | `weight` |
+| Auto-refresh on/off | `#autoCheck` checkbox | `auto` |
+| Refresh interval | `#autoInterval` select | `autoInterval` |
+
+- `saveSettings()` writes the current values whenever any control changes.
+- `loadSettings()` restores the saved values **before the first `load()`** on
+  page reload, so the same settings (timeframe, edge weight, auto-refresh
+  toggle, and interval) are retained.
+- Invalid/unknown saved values are ignored (only applied if a matching
+  `<option>` exists).
+
+---
+
+## 5. Auth
 
 Needs the **admin / master key**, or a key with the `/spend/logs` permission
 (route gated in `spend_management_endpoints.py`). The master key is kept
@@ -75,7 +129,7 @@ Needs the **admin / master key**, or a key with the `/spend/logs` permission
 
 ---
 
-## 4. Run it
+## 6. Run it
 
 ```bash
 npm install
@@ -93,7 +147,7 @@ Environment can also be provided via a `.env` file in the project root (see
 Open `http://localhost:5173` — the chart renders, and the **timeframe slider**
 (top-left) refetches the spend-logs for the new window.
 
-## 5. Optional: title + logo
+## 7. Optional: title + logo
 
 | Env var | Default | Purpose |
 |---|---|---|
@@ -101,11 +155,11 @@ Open `http://localhost:5173` — the chart renders, and the **timeframe slider**
 | `LOGO_FILE` | *(empty)* | Filename in this folder (e.g. `logo.png`) served at `/logo.png` and shown top-left |
 | `PORT` | `5173` | Dashboard port |
 
-## 6. Files
+## 8. Files
 
 | File | Purpose |
 |---|---|
-| `server.js` | Express proxy: paginated spend-log fetch, console progress, early-stop at window start, actual-data time range, logo/title injection |
-| `app.js` | Chart driving + slider → refetch + zoom/records-info display |
-| `index.html` | Dashboard shell (top-aligned zoom bar + records info) |
-| `style.css` | Dark theme, top-aligned control row |
+| `server.js` | Express proxy: paginated spend-log fetch, console progress, NDJSON streaming, early-stop at window start, actual-data time range, logo/title injection |
+| `app.js` | Chart driving + slider → refetch, vertical-fit zoom, `-40px` margin, localStorage persistence, streaming progress bar |
+| `index.html` | Dashboard shell (top-aligned controls row, progress bar) |
+| `style.css` | Dark theme, top-aligned control row, orange progress bar |
