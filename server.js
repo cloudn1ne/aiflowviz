@@ -127,6 +127,12 @@ app.get('/api/sankey', async (req, res) => {
   // reach back to this timestamp, we've covered the whole window and can stop.
   const windowStart = new Date(start);
 
+  // Stream pagination progress to the client as newline-delimited JSON,
+  // so the page-by-page load can drive an orange progress bar in the UI.
+  res.setHeader('Content-Type', 'application/x-ndjson');
+  res.flushHeaders();
+  const progress = (page, total) => res.write(JSON.stringify({ progress: { page, total } }) + '\n');
+
   const first = await litellm('/spend/logs/v2', {
     start_date: litellmDate(start),
     end_date: litellmDate(end),
@@ -143,10 +149,13 @@ app.get('/api/sankey', async (req, res) => {
     if (!Number.isNaN(windowStart.getTime()) &&
       rows.some((r) => new Date(r.startTime).getTime() < windowStart.getTime())) {
     console.log('spend logs: page 1 already covers the window start — no more pages needed');
+    progress(1, 1);
   } else {
     console.log('spend logs: total pages: ' + totalPages);
+    progress(1, totalPages);
     for (let p = 2; p <= totalPages; p++) {
       console.log('spend logs: loading page ' + p + '/' + totalPages + ' ...');
+      progress(p, totalPages);
       const resp = await litellm('/spend/logs/v2', {
         start_date: litellmDate(start),
         end_date: litellmDate(end),
@@ -202,21 +211,22 @@ app.get('/api/sankey', async (req, res) => {
   );
 
   // 3) Aggregate into Sankey.
-  res.json({
-    rows,
-    keyLabels,
-    meta: {
-      weight,
-      totalRequests: rows.length,
-      totalTokens: rows.reduce((s, r) => s + (r.total_tokens || 0), 0),
-      keyCount: Object.keys(keyLabels).length,
+  res.write(JSON.stringify({
+    data: {
+      rows,
+      keyLabels,
+      meta: {
+        weight,
+        totalRequests: rows.length,
+        totalTokens: rows.reduce((s, r) => s + (r.total_tokens || 0), 0),
+        keyCount: Object.keys(keyLabels).length,
+      },
+      window: dataRange,
+      fetchedAt: new Date().toISOString(),
+      warnings,
     },
-    // Show the actual timestamps present in the loaded log data rather than
-    // the raw timeframe selection, so the displayed range matches what is loaded.
-    window: dataRange,
-    fetchedAt: new Date().toISOString(),
-    warnings,
-  });
+  }) + '\n');
+  res.end();
 });
 
 /** GET /api/health — tells the browser whether LiteLLM is reachable. */

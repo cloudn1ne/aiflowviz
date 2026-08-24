@@ -214,6 +214,26 @@ const hideLoading = () => {
   });
 };
 
+// Orange progress bar (top row, between zoom-bar and records-info): shown
+// only while data is loading, filled by the pagination progress streamed
+// from /api/sankey.
+const loadProgressEl = document.getElementById('loadProgress');
+const loadProgressFill = document.getElementById('loadProgressFill');
+function showLoadProgress() {
+  if (!loadProgressEl) return;
+  loadProgressEl.hidden = false;
+  loadProgressFill.style.width = '0%';
+}
+function hideLoadProgress() {
+  if (!loadProgressEl) return;
+  loadProgressEl.hidden = true;
+}
+function setLoadProgress(page, total) {
+  if (!loadProgressFill) return;
+  const pct = total > 0 ? Math.min(100, (page / total) * 100) : 100;
+  loadProgressFill.style.width = pct + '%';
+}
+
 // Console progress log with a timestamp, e.g. `[12:34:56.789] message`.
 function logProgress(msg) {
   const now = new Date();
@@ -243,14 +263,44 @@ function updateRecordsInfo(windowData, meta, rowsLength) {
 async function load() {
   const { start, end } = currentWindow();
   showLoading();
+  showLoadProgress();
   logProgress('load: fetching spend logs');
 
   const resp = await fetch(`/api/sankey?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
-  const data = await resp.json();
   if (!resp.ok) {
-    warningsEl.innerHTML = `Error: ${data.error || resp.status}`;
+    let msg = `Error: ${resp.status}`;
+    try { const e = await resp.json(); msg = `Error: ${e.error || resp.status}`; } catch {}
+    warningsEl.innerHTML = msg;
+    hideLoadProgress();
     return;
   }
+
+  // Read the newline-delimited JSON stream: progress lines, then a data line.
+  let data = null;
+  const reader = resp.body ? resp.body.getReader() : null;
+  if (reader) {
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line) continue;
+        let obj;
+        try { obj = JSON.parse(line); } catch { continue; }
+        if (obj && obj.progress) setLoadProgress(obj.progress.page, obj.progress.total);
+        else if (obj && obj.data) data = obj.data;
+      }
+    }
+  } else {
+    data = await resp.json();
+  }
+  if (!data) { warningsEl.innerHTML = 'Error: empty response'; hideLoadProgress(); return; }
+
   logProgress('load: fetched ' + ((data && data.rows) ? data.rows.length : 0) + ' records');
 
   // Cache the raw rows; weight aggregation happens client-side
@@ -262,6 +312,7 @@ async function load() {
 
   applyWeight();
   hideLoading();
+  hideLoadProgress();
   logProgress('load: chart rendered');
 }
 

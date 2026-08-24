@@ -88,6 +88,28 @@ input[type=range] { width: 160px; accent-color: var(--accent); }
   font-variant-numeric: tabular-nums; color: var(--text);
 }
 
+/* Orange loading progress bar, pinned to the top row between the zoom-bar
+   (top-left) and the records-info (top-right), shown only while loading.
+   Styled like the zoom slider: slim, rounded, same vertical placement. */
+.load-progress {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, .08);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.1);
+}
+.load-progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 4px;
+  background: var(--accent-orange, #f97316);
+  transition: width .2s ease;
+}
+
 /* Smooth zoom: the chart container is resized by JS, and #chart is centered
    with margin:0 auto. The SVG viewBox rescales content proportionally. */
 #chart {
