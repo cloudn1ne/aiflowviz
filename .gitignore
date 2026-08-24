@@ -8,3 +8,7 @@ dashboard.log
 
 # local asset — logo stays out of git
 logo.png
+
+# dev test scripts
+test_*.sh
+/tmp/
