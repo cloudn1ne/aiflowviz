@@ -205,6 +205,8 @@ function currentWindow() {
   let start;
   switch (preset) {
     case '1h':  start = new Date(Date.now() - 3600_000); break;
+    case '6h':  start = new Date(Date.now() - 6 * 3600_000); break;
+    case '12h': start = new Date(Date.now() - 12 * 3600_000); break;
     case '24h': start = new Date(Date.now() - 24 * 3600_000); break;
     case '7d':  start = new Date(Date.now() - 7 * 86400_000); break;
     case '30d': start = new Date(Date.now() - 30 * 86400_000); break;

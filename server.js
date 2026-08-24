@@ -34,6 +34,8 @@ const TITLE = process.env.TITLE || 'LiteLLM → Routing Sankey';
 // Optional logo shown in the top-left corner. Set LOGO_FILE to a filename
 // (e.g. logo.png) in this folder; it is served at /<filename>.
 const LOGO_FILE = process.env.LOGO_FILE || '';
+// Number of spend-log rows fetched per page. Default 1000 if unset.
+const LOG_PAGE_SIZE = Number(process.env.LOG_PAGE_SIZE || 1000);
 
 // ---------------------------------------------------------------------------
 // LiteLLM REST helpers
@@ -122,7 +124,7 @@ app.get('/api/sankey', async (req, res) => {
   //    start_date/end_date, which accept ISO 8601).
   // Fetch ALL spend logs: /spend/logs/v2 is paginated, so loop through every
   // page and concatenate the `data` arrays. Avoids capping the chart at 1000.
-  const PAGE_SIZE = 1000;
+  const PAGE_SIZE = LOG_PAGE_SIZE;
   // Calculated start point of the selected timeframe: once paginated records
   // reach back to this timestamp, we've covered the whole window and can stop.
   const windowStart = new Date(start);
