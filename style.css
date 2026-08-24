@@ -157,5 +157,15 @@ input[type=range] { width: 160px; accent-color: var(--accent); }
   cursor: pointer;
 }
 .download-bar button:hover { filter: brightness(1.1); }
+.detail-mode {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: var(--accent); color: #0b1220;
+  border: none; border-radius: 6px;
+  padding: 6px 12px; font-size: 12px; font-weight: 600;
+  cursor: pointer;
+}
+.detail-mode:hover { filter: brightness(1.1); }
 .warnings { max-width: 1200px; margin: 12px auto 0; padding: 0 24px; }
 .warning { background: #7c2d12; color: #ffedd5; padding: 8px 12px; border-radius: 6px; margin: 4px 0; font-size: 13px; }

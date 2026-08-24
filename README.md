@@ -113,6 +113,12 @@ originating from that key:
   that node.
 - Clicking an unrelated node (or clicking the node again) clears the filter and
   restores the full view.
+- A **"Detail Mode On"** button appears in the lower-right corner of the chart
+  panel while detail mode is active; clicking it returns to the normal full
+  view.
+- If a new timeframe is selected and the fetched data contains **no rows**
+  matching the isolated api_base / api_key, detail mode is exited
+  automatically and the full chart is shown instead.
 
 ---
 

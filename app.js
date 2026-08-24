@@ -201,6 +201,21 @@ window.addEventListener('resize', () => {
 // ---------------------------------------------------------------------------
 let graphRef = null;
 const downloadBtn = document.getElementById('download');
+const detailModeBtn = document.getElementById('detailMode');
+// Show/hide the "Detail Mode On" button in the chart-wrap's lower-right
+// corner based on whether an api_base or api_key is currently isolated.
+const updateDetailButton = () => {
+  const on = selectedKey !== null || selectedBase !== null;
+  detailModeBtn.hidden = !on;
+};
+detailModeBtn.addEventListener('click', () => {
+  // Leaving detail mode returns to the normal full-view chart.
+  selectedKey = null;
+  selectedBase = null;
+  applyWeight();
+  updateDetailButton();
+  warningsEl.innerHTML = '';
+});
 downloadBtn.addEventListener('click', () => {
   if (!graphRef || typeof graphRef.exportToSvg !== 'function') return;
   graphRef.exportToSvg();
@@ -362,6 +377,19 @@ async function load() {
   // Update the top-right records info: time range + actual record count.
   updateRecordsInfo(data.window, data.meta, rawRows.length);
 
+  // If we are in detail mode but the new timeframe has no rows matching the
+  // isolated api_base/api_key, exit detail mode and show the full chart again.
+  if ((selectedKey !== null || selectedBase !== null) &&
+      rawRows.length > 0 &&
+      !rawRows.some((r) => {
+        if (selectedKey && r.api_key !== selectedKey) return false;
+        if (selectedBase && cleanBase(r.api_base) !== selectedBase) return false;
+        return true;
+      })) {
+    selectedKey = null;
+    selectedBase = null;
+  }
+
   applyWeight();
   hideLoading();
   hideLoadProgress();
@@ -433,6 +461,7 @@ function applyWeight() {
   else sankey.update(graph);
   paints++;
 
+  updateDetailButton();
   warningsEl.innerHTML = '';
   return graph;
 }
