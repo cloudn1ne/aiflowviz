@@ -114,7 +114,7 @@ function applyZoom(pct) {
   pct = Math.max(0.3, Math.min(1, pct));
   chartEl.style.width = (baseChartW * pct) + 'px';
   chartEl.style.height = (baseChartH * pct) + 'px';
-  chartEl.style.margin = '0 auto';
+  chartEl.style.margin = '-40px auto';
   zoomValueEl.textContent = `${Math.round(pct * 100)}%`;
 }
 
