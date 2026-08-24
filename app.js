@@ -44,12 +44,13 @@ const saveSettings = () => {
 
 
 const fmt = (n) => new Intl.NumberFormat('en-US').format(n);
+// Display unit label for the selected edge weight, appended to tooltip counts.
 const fmtW = (w) =>
-  w === 'tokens' ? 'tokens'
-  : w === 'prompt_tokens' ? 'prompt tokens'
-  : w === 'completion_tokens' ? 'output tokens'
-  : w === 'spend' ? 'spend ($)'
-  : 'requests';
+  w === 'tokens' ? 'Tokens'
+  : w === 'prompt_tokens' ? 'Prompt Tokens'
+  : w === 'completion_tokens' ? 'Output Tokens'
+  : w === 'spend' ? '$'
+  : 'Requests';
 
 // ---------------------------------------------------------------------------
 // Sankey chart instance (options mirror the ApexSankey skill)
@@ -92,12 +93,12 @@ const sankey = new ApexSankey(chartEl, {
   tooltipTemplate: ({ source, target, value }) => `
     <div style="padding:6px 10px;font-size:12px;line-height:1.5">
       <strong>${source.title}</strong> → <strong>${target.title}</strong>
-      <div style="opacity:.7;font-weight:bold;font-size:2em">${fmt(value)}</div>
+      <div style="opacity:.7;font-weight:bold;font-size:2em">${fmt(value)} ${fmtW(weightEl.value)}</div>
     </div>`,
   nodeTooltipTemplate: ({ node, value }) => `
     <div style="padding:6px 10px;font-size:12px;line-height:1.5">
       <strong>${node.title}</strong>
-      <div style="opacity:.7;font-weight:bold;font-size:2em">flow: ${fmt(value)}</div>
+      <div style="opacity:.7;font-weight:bold;font-size:2em">flow: ${fmt(value)} ${fmtW(weightEl.value)}</div>
     </div>`,
   onNodeClick: (node) => {
     console.log('isolated node:', node.id, node.title);
