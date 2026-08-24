@@ -202,7 +202,55 @@ docker run -p 5173:5173 \
   sankey-dashboard:latest
 ```
 
-## 9. Optional: title + logo
+## 9. Releasing a new package version (bump + push)
+
+The GHCR image is tagged from two sources: the **version string in
+`package.json`** (the `:<version>` tag) and the **git ref** (`:latest` on
+main, `:<ref-name>` on tag/branch pushes). To cut a new release:
+
+### 1. Bump the version string
+
+```bash
+# pick one — this also bumps package-lock.json
+npm version patch   # 1.0.2 -> 1.0.3
+npm version minor   # 1.0.3 -> 1.1.0
+npm version major   # 1.1.0 -> 2.0.0
+npm version 0.2.0   # or set an exact version
+```
+
+`npm version` tags the commit with `v<version>` and commits the bump in one
+step. If you'd rather bump manually and commit yourself:
+
+```bash
+npm version 0.2.0 --no-git-tag-version   # edits package.json only
+git add package.json package-lock.json
+git commit -m "Version 0.2.0"
+```
+
+### 2. Push to trigger the CI build
+
+```bash
+git push origin main            # builds & pushes  :latest and :0.2.0
+git push origin v0.2.0           # builds & pushes  :v0.2.0  (+ :latest, :0.2.0)
+```
+
+The workflow `.github/workflows/docker-build.yml` runs on **every push to
+main** and on **`v*` tag pushes**:
+
+- pushing `main` → GHCR gets `:latest` and `:<version>` (from `package.json`)
+- pushing a `v<version>` tag → GHCR also gets `:<ref-name>` (the tag, e.g. `:v0.2.0`)
+
+### 3. Verify the release
+
+- The GHCR package appears under **Packages** in your repo: `ghcr.io/<you>/<repo>`.
+- Check the **Actions** tab for the `docker-build` workflow run (it should be
+  green) and the pushed tags under the package's details.
+
+> **Note:** pushing code to main without a tag will **not** produce a
+> `:v...` tag image — the versioned tag requires a `git tag vX.Y.Z` push (or
+> the `:<version>` tag from `package.json`, which is always emitted).
+
+## 10. Optional: title + logo
 
 | Env var | Default | Purpose |
 |---|---|---|
@@ -210,7 +258,7 @@ docker run -p 5173:5173 \
 | `LOGO_FILE` | *(empty)* | Filename in this folder (e.g. `logo.png`) served at `/logo.png` and shown top-left |
 | `PORT` | `5173` | Dashboard port |
 
-## 10. Files
+## 11. Files
 
 | File | Purpose |
 |---|---|
