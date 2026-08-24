@@ -104,12 +104,21 @@ const sankey = new ApexSankey(chartEl, {
     // Clicking an api_base node isolates just the flows that reach it.
     const isBase = rawRows.some((r) =>
       cleanBase(r.api_base) === node.id || cleanBase(r.api_base) === node.title);
+    // Clicking an api_key (client) node isolates just the flows from that key.
+    const isKey = rawRows.some((r) => r.api_key === node.id);
+
     if (isBase) {
+      selectedKey = null;
       selectedBase = node.id || node.title;
       applyWeight();
-    } else if (selectedBase !== null) {
-      // Clicking a non-base node clears the api_base filter.
+    } else if (isKey) {
       selectedBase = null;
+      selectedKey = node.id;
+      applyWeight();
+    } else if (selectedKey !== null || selectedBase !== null) {
+      // Clicking an unrelated node clears the filter.
+      selectedBase = null;
+      selectedKey = null;
       applyWeight();
     }
   },
@@ -236,6 +245,9 @@ let keyLabels = {};
 // The api_base node currently clicked: when set, buildGraph filters the rows
 // so only the flows that lead to this api_base are shown.
 let selectedBase = null;
+// The api_key (client) node currently clicked: when set, buildGraph filters
+// the rows so only the flows from this api_key are shown.
+let selectedKey = null;
 
 // Loading overlay over the chart: show while fetching, hide when done.
 // showLoading() forces a layout flush so the overlay paints even if data
@@ -372,10 +384,14 @@ function buildGraph(rows, weight) {
     : weight === 'spend' ? (r.spend || 0)
     : 1;
 
-  // When an api_base node is clicked, only include rows that reach it, so the
-  // weights reflect just the flows relevant to that api_base.
-  const sourceRows = selectedBase
-    ? rows.filter((r) => cleanBase(r.api_base) === selectedBase)
+  // When an api_base or api_key node is clicked, only include rows that match,
+  // so the weights reflect just the flows relevant to that node.
+  const sourceRows = (selectedKey || selectedBase)
+    ? rows.filter((r) => {
+        if (selectedKey && r.api_key !== selectedKey) return false;
+        if (selectedBase && cleanBase(r.api_base) !== selectedBase) return false;
+        return true;
+      })
     : rows;
 
   const nodes = [], edges = [], nodeIds = new Set(), edgeMap = new Map();

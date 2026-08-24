@@ -100,16 +100,18 @@ removes the vertical scrollbar and tightens the layout.
 
 ---
 
-## 4. Click an api_base to isolate its flows
+## 4. Click an api_base or api_key to isolate its flows
 
 Clicking an **api_base node** in the Sankey chart isolates just the flows that
-reach that base:
+reach that base; clicking an **api_key (client) node** isolates just the flows
+originating from that key:
 
-- `onNodeClick` detects api_base clicks and sets `selectedBase`.
-- `buildGraph` then filters the rows to only those whose api_base matches, so
-  the nodes and edge weights reflect **only** the clients/models routed to that
-  api_base.
-- Clicking any non-base node (or clicking the base again) clears the filter and
+- `onNodeClick` detects api_base clicks (`selectedBase`) and api_key clicks
+  (`selectedKey`).
+- `buildGraph` then filters the rows to only those whose api_base / api_key
+  match, so the nodes and edge weights reflect **only** the flows relevant to
+  that node.
+- Clicking an unrelated node (or clicking the node again) clears the filter and
   restores the full view.
 
 ---
