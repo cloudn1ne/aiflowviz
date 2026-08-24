@@ -118,6 +118,25 @@ input[type=range] { width: 160px; accent-color: var(--accent); }
   transition: width .15s ease, height .15s ease;
 }
 
+/* Error message shown in the chart area when the backend can't reach
+   LiteLLM (or data can't be loaded). Big, bright red text centered over the
+   chart space — the chart isn't rendered when this appears. */
+.chart-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  padding: 24px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #ff4d4d;             /* bright red */
+  text-shadow: 0 2px 8px rgba(0,0,0,.6);
+}
+.chart-error[hidden] { display: none; }
+
 /* Loading overlay over the chart */
 .loading-overlay {
   display: none;

@@ -284,6 +284,7 @@ let selectedKey = null;
 // arrives synchronously; hideLoading() defers to the next frame so the
 // overlay is guaranteed to be visible at least once.
 const loadingEl = document.getElementById('loading');
+const chartErrorEl = document.getElementById('chartError');
 const showLoading = () => {
   if (!loadingEl) return;
   loadingEl.style.display = 'flex';
@@ -310,6 +311,22 @@ function hideLoadProgress() {
   if (!loadProgressEl) return;
   loadProgressEl.hidden = true;
 }
+
+// Show an error message in the chart area (where the Sankey would render),
+// in big bright-red text — used when the backend can't reach LiteLLM or the
+// chart data can't be loaded. Clears the loading overlay so the error stands
+// alone in the chart space.
+const showChartError = (msg) => {
+  if (!chartErrorEl) return;
+  hideLoading();
+  chartErrorEl.hidden = false;
+  chartErrorEl.textContent = msg;
+};
+const clearChartError = () => {
+  if (!chartErrorEl) return;
+  chartErrorEl.hidden = true;
+  chartErrorEl.textContent = '';
+};
 function setLoadProgress(page, total) {
   if (!loadProgressFill) return;
   const pct = total > 0 ? Math.min(100, (page / total) * 100) : 100;
@@ -353,8 +370,7 @@ async function load() {
     resp = await fetch(`/api/sankey?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
   } catch (e) {
     // Network-level failure: backend unreachable, proxy down, etc.
-    warningsEl.innerHTML = `Cannot reach the dashboard backend: ${e.message}`;
-    hideLoading();
+    showChartError(`Cannot reach the dashboard backend: ${e.message}`);
     hideLoadProgress();
     return;
   }
@@ -363,7 +379,7 @@ async function load() {
     // Read the body as text first so non-JSON 500s (e.g. the LiteLLM 502
     // detail) still surface in the page.
     try { const e = await resp.json(); msg = `Error: ${e.error || resp.status}`; } catch {}
-    warningsEl.innerHTML = msg;
+    showChartError(msg);
     hideLoadProgress();
     return;
   }
@@ -388,8 +404,7 @@ async function load() {
         if (obj && obj.progress) setLoadProgress(obj.progress.page, obj.progress.total);
         else if (obj && obj.error) {
           // Backend reported an upstream failure (e.g. cannot reach LiteLLM).
-          warningsEl.innerHTML = obj.error;
-          hideLoading();
+          showChartError(obj.error);
           hideLoadProgress();
           return;
         }
@@ -399,7 +414,7 @@ async function load() {
   } else {
     data = await resp.json();
   }
-  if (!data) { warningsEl.innerHTML = 'Error: empty response'; hideLoadProgress(); return; }
+  if (!data) { showChartError('Error: empty response'); hideLoadProgress(); return; }
 
   logProgress('load: fetched ' + ((data && data.rows) ? data.rows.length : 0) + ' records');
 
@@ -423,6 +438,7 @@ async function load() {
     selectedBase = null;
   }
 
+  clearChartError();
   applyWeight();
   hideLoading();
   hideLoadProgress();
