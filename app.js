@@ -92,12 +92,12 @@ const sankey = new ApexSankey(chartEl, {
   tooltipTemplate: ({ source, target, value }) => `
     <div style="padding:6px 10px;font-size:12px;line-height:1.5">
       <strong>${source.title}</strong> → <strong>${target.title}</strong>
-      <div style="opacity:.7">${fmt(value)}</div>
+      <div style="opacity:.7;font-weight:bold;font-size:2em">${fmt(value)}</div>
     </div>`,
   nodeTooltipTemplate: ({ node, value }) => `
     <div style="padding:6px 10px;font-size:12px;line-height:1.5">
       <strong>${node.title}</strong>
-      <div style="opacity:.7">flow: ${fmt(value)}</div>
+      <div style="opacity:.7;font-weight:bold;font-size:2em">flow: ${fmt(value)}</div>
     </div>`,
   onNodeClick: (node) => {
     console.log('isolated node:', node.id, node.title);
