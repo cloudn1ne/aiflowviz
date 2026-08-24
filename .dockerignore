@@ -1,0 +1,15 @@
+# Keep local secrets/assets out of the image even for local `docker build`.
+# (CI checks out from git, where these are gitignored and absent.)
+.env
+.env.example
+logo.png
+dashboard.log
+
+# Not needed in the image
+.git
+.gitignore
+node_modules
+docker-compose.yml
+Dockerfile
+.github
+*.md

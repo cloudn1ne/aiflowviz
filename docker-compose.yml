@@ -1,0 +1,39 @@
+# Sample docker-compose for the LiteLLM → Routing Sankey dashboard.
+#
+# The image is built & pushed to GHCR by .github/workflows/docker-build.yml on
+# every push to main. Point the image at your registry/repo (default below is
+# your GitHub user/repo). Provide the LiteLLM base URL + master key at runtime —
+# secrets are NOT baked into the image.
+#
+# Usage:
+#   docker compose up -d
+#   open http://localhost:5173
+#
+# To pull a specific version instead of latest:
+#   image: ghcr.io/<you>/<repo>:1.0.0
+
+services:
+  dashboard:
+    image: ghcr.io/<your-gh-user>/<your-repo>:latest
+    build:
+      context: .
+      # multi-arch image is pushed by CI; local `docker compose build` builds
+      # for the host platform only.
+      dockerfile: Dockerfile
+    container_name: sankey-dashboard
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      # Where the LiteLLM proxy lives (as seen from this container).
+      LITELLM_BASE: http://litellm:4000
+      # Admin / master key, or a key with the /spend/logs permission.
+      LITELLM_MASTER_KEY: sk-your-master-key
+      # Dashboard port inside the container (default 5173).
+      PORT: 5173
+      # Optional title shown in the page header.
+      TITLE: LiteLLM → Routing Sankey
+      # Optional logo: put logo.png in this folder and set LOGO_FILE=logo.png.
+      # LOGO_FILE: logo.png
+      # Optional: spend-log rows fetched per page (default 1000).
+      # LOG_PAGE_SIZE: 1000

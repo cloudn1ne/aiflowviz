@@ -1,0 +1,66 @@
+# Push the LiteLLM → Routing Sankey dashboard image to GHCR on every push.
+#
+# Tagging/versioning:
+#   - every commit on main       -> :latest  and  :<version> (package.json)
+#   - every git tag (vX.Y.Z)     -> :latest, :<version>, and :vX.Y.Z
+#   - every other branch push    -> :<branch>-<short-sha>
+#
+# Secrets are injected at runtime via docker-compose / environment, never baked
+# into the image (LITELLM_MASTER_KEY is gitignored and must not be committed).
+name: docker-build
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  # Allow manual builds from the Actions tab (useful for testing).
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write  # push to GHCR
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Derive the semver from package.json for tagging + labels.
+      - name: Compute version
+        id: version
+        run: |
+          echo "semver=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64, linux/arm64
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.semver }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.version.outputs.semver }}
+            org.opencontainers.image.revision=${{ github.sha }}

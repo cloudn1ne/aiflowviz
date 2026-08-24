@@ -170,7 +170,39 @@ Environment can also be provided via a `.env` file in the project root (see
 Open `http://localhost:5173` — the chart renders, and the **timeframe slider**
 (top-left) refetches the spend-logs for the new window.
 
-## 8. Optional: title + logo
+## 8. Docker deployment
+
+A `Dockerfile`, `docker-compose.yml`, and a GitHub Actions workflow
+(`.github/workflows/docker-build.yml`) are included. On **every push to main**
+(and on `v*` tags), CI builds a multi-arch image (`linux/amd64` + `linux/arm64`)
+and pushes it to **GHCR** as:
+
+- `ghcr.io/<you>/<repo>:latest`
+- `ghcr.io/<you>/<repo>:<version>` (from `package.json`)
+- `ghcr.io/<you>/<repo>:<ref-name>` (`main`, or the tag name like `v1.0.0`)
+
+Secrets are **never baked into the image** — provide `LITELLM_BASE` and
+`LITELLM_MASTER_KEY` at runtime (see `docker-compose.yml`).
+
+### Deploy with docker compose
+
+```bash
+# edit docker-compose.yml: set the image + LITELLM_BASE + LITELLM_MASTER_KEY
+docker compose up -d
+# dashboard on http://localhost:5173
+```
+
+### Build locally (no CI)
+
+```bash
+docker build -t sankey-dashboard:latest .
+docker run -p 5173:5173 \
+  -e LITELLM_BASE=http://localhost:4000 \
+  -e LITELLM_MASTER_KEY=sk-your-master-key \
+  sankey-dashboard:latest
+```
+
+## 9. Optional: title + logo
 
 | Env var | Default | Purpose |
 |---|---|---|
@@ -178,7 +210,7 @@ Open `http://localhost:5173` — the chart renders, and the **timeframe slider**
 | `LOGO_FILE` | *(empty)* | Filename in this folder (e.g. `logo.png`) served at `/logo.png` and shown top-left |
 | `PORT` | `5173` | Dashboard port |
 
-## 9. Files
+## 10. Files
 
 | File | Purpose |
 |---|---|
@@ -186,3 +218,6 @@ Open `http://localhost:5173` — the chart renders, and the **timeframe slider**
 | `app.js` | Chart driving + slider → refetch, vertical-fit zoom, `-40px` margin, localStorage persistence, streaming progress bar, api_base click isolation |
 | `index.html` | Dashboard shell (top-aligned controls row, progress bar) |
 | `style.css` | Dark theme, top-aligned control row, orange progress bar |
+| `Dockerfile` | Node 20 alpine image: installs prod deps and runs the dashboard |
+| `docker-compose.yml` | Sample compose: dashboard container + env vars |
+| `.github/workflows/docker-build.yml` | CI: builds & pushes multi-arch image to GHCR on push |
