@@ -108,12 +108,22 @@ const sankey = new ApexSankey(chartEl, {
     const isKey = rawRows.some((r) => r.api_key === node.id);
 
     if (isBase) {
-      selectedKey = null;
-      selectedBase = node.id || node.title;
+      // Clicking an api_base while already in detail mode exits detail mode.
+      if (selectedKey !== null || selectedBase !== null) {
+        selectedKey = null;
+        selectedBase = null;
+      } else {
+        selectedBase = node.id || node.title;
+      }
       applyWeight();
     } else if (isKey) {
-      selectedBase = null;
-      selectedKey = node.id;
+      // Clicking an api_key while already in detail mode exits detail mode.
+      if (selectedKey !== null || selectedBase !== null) {
+        selectedKey = null;
+        selectedBase = null;
+      } else {
+        selectedKey = node.id;
+      }
       applyWeight();
     } else if (selectedKey !== null || selectedBase !== null) {
       // Clicking an unrelated node clears the filter.

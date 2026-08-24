@@ -111,8 +111,9 @@ originating from that key:
 - `buildGraph` then filters the rows to only those whose api_base / api_key
   match, so the nodes and edge weights reflect **only** the flows relevant to
   that node.
-- Clicking an unrelated node (or clicking the node again) clears the filter and
-  restores the full view.
+- Clicking an api_base or api_key **while already in detail mode** exits detail
+  mode and restores the full view (toggle behavior).
+- Clicking an unrelated node clears the filter and restores the full view.
 - A **"Detail Mode On"** button appears in the lower-right corner of the chart
   panel while detail mode is active; clicking it returns to the normal full
   view.
