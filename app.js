@@ -98,7 +98,7 @@ const sankey = new ApexSankey(chartEl, {
   nodeTooltipTemplate: ({ node, value }) => `
     <div style="padding:6px 10px;font-size:12px;line-height:1.5">
       <strong>${node.title}</strong>
-      <div style="opacity:.7;font-weight:bold;font-size:2em">flow: ${fmt(value)} ${fmtW(weightEl.value)}</div>
+      <div style="opacity:.7;font-weight:bold;font-size:2em">${fmt(value)} ${fmtW(weightEl.value)}</div>
     </div>`,
   onNodeClick: (node) => {
     console.log('isolated node:', node.id, node.title);
@@ -238,7 +238,9 @@ function windowLabel() {
   switch (p) {
     case '1h':  return 'last 1 hour';
     case '24h': return 'last 24 hours';
+    case '3h':  return 'last 3 hours';
     case '7d':  return 'last 7 days';
+    case '14d': return 'last 14 days';
     case '30d': return 'last 30 days';
     default:    return 'last 24 hours';
   }
@@ -254,7 +256,9 @@ function currentWindow() {
     case '6h':  start = new Date(Date.now() - 6 * 3600_000); break;
     case '12h': start = new Date(Date.now() - 12 * 3600_000); break;
     case '24h': start = new Date(Date.now() - 24 * 3600_000); break;
+    case '3h':  start = new Date(Date.now() - 3 * 3600_000); break;
     case '7d':  start = new Date(Date.now() - 7 * 86400_000); break;
+    case '14d': start = new Date(Date.now() - 14 * 86400_000); break;
     case '30d': start = new Date(Date.now() - 30 * 86400_000); break;
     default:    start = new Date(Date.now() - 24 * 3600_000);
   }
