@@ -284,7 +284,7 @@ let selectedKey = null;
 // arrives synchronously; hideLoading() defers to the next frame so the
 // overlay is guaranteed to be visible at least once.
 const loadingEl = document.getElementById('loading');
-const chartErrorEl = document.getElementById('chartError');
+let chartErrorEl = document.getElementById('chartError');
 const showLoading = () => {
   if (!loadingEl) return;
   loadingEl.style.display = 'flex';
@@ -316,16 +316,31 @@ function hideLoadProgress() {
 // in big bright-red text — used when the backend can't reach LiteLLM or the
 // chart data can't be loaded. Clears the loading overlay so the error stands
 // alone in the chart space.
+//
+// Note: ApexSankey's render wipes the children of #chart (including any
+// static #chartError element), so we re-create the error node dynamically
+// inside #chart's anchored parent (.chart-wrap) each time an error occurs.
+const ensureChartErrorEl = () => {
+  if (chartErrorEl && chartErrorEl.isConnected) return chartErrorEl;
+  const el = document.createElement('div');
+  el.id = 'chartError';
+  el.className = 'chart-error';
+  el.hidden = true;
+  const chart = document.getElementById('chart');
+  (chart || document.body).appendChild(el);
+  chartErrorEl = el;
+  return el;
+};
 const showChartError = (msg) => {
-  if (!chartErrorEl) return;
+  const el = ensureChartErrorEl();
   hideLoading();
-  chartErrorEl.hidden = false;
-  chartErrorEl.textContent = msg;
+  el.hidden = false;
+  el.textContent = msg;
 };
 const clearChartError = () => {
-  if (!chartErrorEl) return;
-  chartErrorEl.hidden = true;
-  chartErrorEl.textContent = '';
+  const el = ensureChartErrorEl();
+  el.hidden = true;
+  el.textContent = '';
 };
 function setLoadProgress(page, total) {
   if (!loadProgressFill) return;

@@ -1,14 +1,18 @@
 {
   "name": "litellm-sankey-dashboard",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Dashboard visualizing which LiteLLM clients requested which virtual keys/models and where requests were routed (api_base), using ApexSankey.",
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "verify:error": "node verify_chart_error.cjs"
   },
   "dependencies": {
     "apexsankey": "^1.12.0",
     "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1"
   }
 }
