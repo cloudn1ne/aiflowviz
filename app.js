@@ -19,6 +19,30 @@ const refreshBtn = document.getElementById('refresh');
 const autoCheck = document.getElementById('autoCheck');
 const autoInterval = document.getElementById('autoInterval');
 
+// Persist the dashboard settings (timeframe, edge weight, auto-refresh)
+// in localStorage so they are retained across page reloads.
+const SETTINGS_KEY = 'sankeyDashboard.settings';
+const loadSettings = () => {
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(SETTINGS_KEY)); } catch { saved = null; }
+  if (!saved) return;
+  if (saved.range && rangeEl.querySelector(`option[value="${saved.range}"]`)) rangeEl.value = saved.range;
+  if (saved.weight && weightEl.querySelector(`option[value="${saved.weight}"]`)) weightEl.value = saved.weight;
+  if (typeof saved.auto === 'boolean') autoCheck.checked = saved.auto;
+  if (saved.autoInterval && autoInterval.querySelector(`option[value="${saved.autoInterval}"]`)) autoInterval.value = saved.autoInterval;
+};
+const saveSettings = () => {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+      range: rangeEl.value,
+      weight: weightEl.value,
+      auto: autoCheck.checked,
+      autoInterval: autoInterval.value,
+    }));
+  } catch {}
+};
+
+
 const fmt = (n) => new Intl.NumberFormat('en-US').format(n);
 const fmtW = (w) =>
   w === 'tokens' ? 'tokens'
@@ -378,8 +402,8 @@ function applyWeight() {
 // Events
 // ---------------------------------------------------------------------------
 refreshBtn.addEventListener('click', load);
-weightEl.addEventListener('change', applyWeight);
-rangeEl.addEventListener('change', load);
+weightEl.addEventListener('change', () => { applyWeight(); saveSettings(); });
+rangeEl.addEventListener('change', () => { load(); saveSettings(); });
 
 // ---------------------------------------------------------------------------
 // Auto-refresh
@@ -395,7 +419,10 @@ function applyAutoRefresh() {
     console.log('auto-refresh disabled');
   }
 }
-autoCheck.addEventListener('change', applyAutoRefresh);
-autoInterval.addEventListener('change', applyAutoRefresh);
+autoCheck.addEventListener('change', () => { applyAutoRefresh(); saveSettings(); });
+autoInterval.addEventListener('change', () => { applyAutoRefresh(); saveSettings(); });
 
+// Restore previously saved settings before the first load, so a reload keeps
+// the timeframe, edge weight, and auto-refresh choices the user last used.
+loadSettings();
 load();
