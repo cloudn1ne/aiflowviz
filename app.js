@@ -101,6 +101,17 @@ const sankey = new ApexSankey(chartEl, {
     </div>`,
   onNodeClick: (node) => {
     console.log('isolated node:', node.id, node.title);
+    // Clicking an api_base node isolates just the flows that reach it.
+    const isBase = rawRows.some((r) =>
+      cleanBase(r.api_base) === node.id || cleanBase(r.api_base) === node.title);
+    if (isBase) {
+      selectedBase = node.id || node.title;
+      applyWeight();
+    } else if (selectedBase !== null) {
+      // Clicking a non-base node clears the api_base filter.
+      selectedBase = null;
+      applyWeight();
+    }
   },
 });
 
@@ -222,6 +233,9 @@ let paints = 0;
 // Raw data cache (fetched once; weight is aggregated client-side)
 let rawRows = [];
 let keyLabels = {};
+// The api_base node currently clicked: when set, buildGraph filters the rows
+// so only the flows that lead to this api_base are shown.
+let selectedBase = null;
 
 // Loading overlay over the chart: show while fetching, hide when done.
 // showLoading() forces a layout flush so the overlay paints even if data
@@ -358,8 +372,14 @@ function buildGraph(rows, weight) {
     : weight === 'spend' ? (r.spend || 0)
     : 1;
 
+  // When an api_base node is clicked, only include rows that reach it, so the
+  // weights reflect just the flows relevant to that api_base.
+  const sourceRows = selectedBase
+    ? rows.filter((r) => cleanBase(r.api_base) === selectedBase)
+    : rows;
+
   const nodes = [], edges = [], nodeIds = new Set(), edgeMap = new Map();
-  for (const row of rows) {
+  for (const row of sourceRows) {
     const clientId = row.api_key || 'unknown-key';
     const clientTitle = keyLabels[clientId]?.title || `key:${clientId.slice(0, 8)}`;
     const modelId = row.model_group || row.model || 'unknown-model';

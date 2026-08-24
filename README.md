@@ -100,7 +100,21 @@ removes the vertical scrollbar and tightens the layout.
 
 ---
 
-## 4. Settings are remembered (localStorage)
+## 4. Click an api_base to isolate its flows
+
+Clicking an **api_base node** in the Sankey chart isolates just the flows that
+reach that base:
+
+- `onNodeClick` detects api_base clicks and sets `selectedBase`.
+- `buildGraph` then filters the rows to only those whose api_base matches, so
+  the nodes and edge weights reflect **only** the clients/models routed to that
+  api_base.
+- Clicking any non-base node (or clicking the base again) clears the filter and
+  restores the full view.
+
+---
+
+## 5. Settings are remembered (localStorage)
 
 The dashboard persists its controls in the browser's `localStorage` under the
 key `sankeyDashboard.settings`:
@@ -121,7 +135,7 @@ key `sankeyDashboard.settings`:
 
 ---
 
-## 5. Auth
+## 6. Auth
 
 Needs the **admin / master key**, or a key with the `/spend/logs` permission
 (route gated in `spend_management_endpoints.py`). The master key is kept
@@ -129,7 +143,7 @@ Needs the **admin / master key**, or a key with the `/spend/logs` permission
 
 ---
 
-## 6. Run it
+## 7. Run it
 
 ```bash
 npm install
@@ -147,7 +161,7 @@ Environment can also be provided via a `.env` file in the project root (see
 Open `http://localhost:5173` — the chart renders, and the **timeframe slider**
 (top-left) refetches the spend-logs for the new window.
 
-## 7. Optional: title + logo
+## 8. Optional: title + logo
 
 | Env var | Default | Purpose |
 |---|---|---|
@@ -155,11 +169,11 @@ Open `http://localhost:5173` — the chart renders, and the **timeframe slider**
 | `LOGO_FILE` | *(empty)* | Filename in this folder (e.g. `logo.png`) served at `/logo.png` and shown top-left |
 | `PORT` | `5173` | Dashboard port |
 
-## 8. Files
+## 9. Files
 
 | File | Purpose |
 |---|---|
 | `server.js` | Express proxy: paginated spend-log fetch, console progress, NDJSON streaming, early-stop at window start, actual-data time range, logo/title injection |
-| `app.js` | Chart driving + slider → refetch, vertical-fit zoom, `-40px` margin, localStorage persistence, streaming progress bar |
+| `app.js` | Chart driving + slider → refetch, vertical-fit zoom, `-40px` margin, localStorage persistence, streaming progress bar, api_base click isolation |
 | `index.html` | Dashboard shell (top-aligned controls row, progress bar) |
 | `style.css` | Dark theme, top-aligned control row, orange progress bar |
