@@ -26,7 +26,7 @@ services:
       - "5173:5173"
     # volumes:
       # Mount the host's ./logo.png to /logo.png inside the container
-      #- ./logo.png:/logo.png
+      #- ./logo.png:/app/logo.png
     environment:
       # Where the LiteLLM proxy lives (as seen from this container).
       LITELLM_BASE: http://litellm:4000
