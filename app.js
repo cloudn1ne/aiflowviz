@@ -98,24 +98,60 @@ const zoomValueEl = document.getElementById('zoomValue');
 // Natural (unzoomed) size of the chart container, captured on first use.
 let baseChartW = null;
 let baseChartH = null;
-zoomEl.addEventListener('input', () => {
-  const pct = Number(zoomEl.value) / 100;
-  if (baseChartW === null) {
-    // The SVG fills #chart at 100%; its rendered client size is the natural size.
-    const svg = chartEl.querySelector('svg');
-    baseChartW = svg ? svg.clientWidth : chartEl.clientWidth;
-    baseChartH = svg ? svg.clientHeight : chartEl.clientHeight;
-  }
-  // Resize the chart container; the SVG's viewBox rescales the chart content
-  // proportionally (preserveAspectRatio), so the whole chart grows/shrinks.
-  // #chart has margin:0 auto so it stays centered at any size.
+
+// Capture the chart's natural (100%) base size once, from the SVG before any
+// zoom is applied, so zoom percentages stay stable and resize fitting is correct.
+function ensureBaseSize() {
+  if (baseChartW !== null) return;
+  const svg = chartEl.querySelector('svg');
+  baseChartW = svg ? svg.clientWidth : chartEl.clientWidth;
+  baseChartH = svg ? svg.clientHeight : chartEl.clientHeight;
+}
+
+// Apply a zoom factor (0.3 – 1) to the chart container; the SVG auto-fits it.
+function applyZoom(pct) {
+  ensureBaseSize();
+  pct = Math.max(0.3, Math.min(1, pct));
   chartEl.style.width = (baseChartW * pct) + 'px';
   chartEl.style.height = (baseChartH * pct) + 'px';
   chartEl.style.margin = '0 auto';
-  zoomValueEl.textContent = `${zoomEl.value}%`;
+  zoomValueEl.textContent = `${Math.round(pct * 100)}%`;
+}
+
+// Recalculate the zoom so the chart is fully visible in the vertical dimension
+// of the current viewport: fit the chart to the space below its content top.
+function fitChartVertically() {
+  ensureBaseSize();
+  const wrap = chartEl.parentElement;
+  const cs = getComputedStyle(wrap);
+  const padTop = parseFloat(cs.paddingTop) || 0;
+  const padBottom = parseFloat(cs.paddingBottom) || 0;
+  const wrapTop = wrap.getBoundingClientRect().top;
+  // Reserve the download bar (below the chart) so it stays on-screen.
+  let below = 0;
+  const dl = wrap.querySelector('.download-bar');
+  if (dl) {
+    const r = dl.getBoundingClientRect();
+    if (r.bottom > wrapTop) below = r.height || 0;
+  }
+  const availH = window.innerHeight - (wrapTop + padTop) - padBottom - below;
+  const pct = Math.max(0.3, Math.min(1, availH / baseChartH));
+  applyZoom(pct);
+  zoomEl.value = Math.round(pct * 100);
+}
+
+// Zoom slider.
+zoomEl.addEventListener('input', () => {
+  applyZoom(Number(zoomEl.value) / 100);
 });
 
-// ---------------------------------------------------------------------------
+// Keep the chart fully visible vertically on page load and window resize.
+let fitTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(() => { ensureBaseSize(); fitChartVertically(); }, 150);
+});
+
 // Download button below the chart: export the current chart as an SVG file.
 // graphRef is the rendered graph (set in applyWeight) exposing exportToSvg().
 // ---------------------------------------------------------------------------
@@ -277,6 +313,9 @@ function applyWeight() {
   if (paints === 0) {
     // Capture the rendered graph so the Download button can call exportToSvg().
     graphRef = sankey.render(graph);
+    // Fit the chart into the viewport vertically once the first chart renders,
+    // so the whole chart is visible on page load.
+    setTimeout(fitChartVertically, 50);
   }
   else sankey.update(graph);
   paints++;
