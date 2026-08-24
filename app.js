@@ -348,9 +348,20 @@ async function load() {
   showLoadProgress();
   logProgress('load: fetching spend logs');
 
-  const resp = await fetch(`/api/sankey?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+  let resp;
+  try {
+    resp = await fetch(`/api/sankey?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+  } catch (e) {
+    // Network-level failure: backend unreachable, proxy down, etc.
+    warningsEl.innerHTML = `Cannot reach the dashboard backend: ${e.message}`;
+    hideLoading();
+    hideLoadProgress();
+    return;
+  }
   if (!resp.ok) {
     let msg = `Error: ${resp.status}`;
+    // Read the body as text first so non-JSON 500s (e.g. the LiteLLM 502
+    // detail) still surface in the page.
     try { const e = await resp.json(); msg = `Error: ${e.error || resp.status}`; } catch {}
     warningsEl.innerHTML = msg;
     hideLoadProgress();
@@ -375,6 +386,13 @@ async function load() {
         let obj;
         try { obj = JSON.parse(line); } catch { continue; }
         if (obj && obj.progress) setLoadProgress(obj.progress.page, obj.progress.total);
+        else if (obj && obj.error) {
+          // Backend reported an upstream failure (e.g. cannot reach LiteLLM).
+          warningsEl.innerHTML = obj.error;
+          hideLoading();
+          hideLoadProgress();
+          return;
+        }
         else if (obj && obj.data) data = obj.data;
       }
     }

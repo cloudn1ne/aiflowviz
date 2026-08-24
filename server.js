@@ -139,11 +139,23 @@ app.get('/api/sankey', async (req, res) => {
   res.flushHeaders();
   const progress = (page, total) => res.write(JSON.stringify({ progress: { page, total } }) + '\n');
 
-  const first = await litellm('/spend/logs/v2', {
-    start_date: litellmDate(start),
-    end_date: litellmDate(end),
-    page: 1, page_size: PAGE_SIZE,
-  }).then((r) => r);
+  let first;
+  try {
+    first = await litellm('/spend/logs/v2', {
+      start_date: litellmDate(start),
+      end_date: litellmDate(end),
+      page: 1, page_size: PAGE_SIZE,
+    }).then((r) => r);
+  } catch (e) {
+    // NDJSON headers are already flushed, so write an error line to the open
+    // stream instead of a raw crash. The browser reads it and shows it in page.
+    res.write(JSON.stringify({
+      error: `Cannot reach LiteLLM at ${LITELLM_BASE}: ${e.message}`,
+      litellm: LITELLM_BASE,
+    }) + '\n');
+    res.end();
+    return;
+  }
   const firstData = (first && first.data) || (Array.isArray(first) ? first : []);
   let rows = Array.isArray(firstData) ? firstData.slice() : [];
   console.log('spend logs: page 1 loaded (' + firstData.length + ' rows)');
